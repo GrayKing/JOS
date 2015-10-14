@@ -34,16 +34,16 @@ mon_help(int argc, char **argv, struct Trapframe *tf)
 {
 	int i;
 
-	ccprintf("Hello!",0x10);
-	ccprintf("It's just a Sample.",0x12);
-	ccprintf("To see what would happen\n",0x14);
-	ccprintf("If I change the color of the text.\n",0x18);
-	ccprintf("Would it be ridiculars?\n",0x24);
-	ccprintf("Or not?\n",0x28);
-	ccprintf("I'm joke, don't beat me.\n",0x48);
-	ccprintf("Oh, it hurts , boy!\n",0x30);
-	ccprintf("I guess my battery would run out soon...\n",0x50);
-	ccprintf("Bye Bye!\n",0x70);
+	//ccprintf("Hello!",0x10);
+	//ccprintf("It's just a Sample.",0x12);
+	//ccprintf("To see what would happen\n",0x14);
+	//ccprintf("If I change the color of the text.\n",0x18);
+	//ccprintf("Would it be ridiculars?\n",0x24);
+	//ccprintf("Or not?\n",0x28);
+	//ccprintf("I'm joke, don't beat me.\n",0x48);
+	//ccprintf("Oh, it hurts , boy!\n",0x30);
+	//ccprintf("I guess my battery would run out soon...\n",0x50);
+	//ccprintf("Bye Bye!\n",0x70);
 	for (i = 0; i < NCOMMANDS; i++)
 		cprintf("%s - %s\n", commands[i].name, commands[i].desc);
 	return 0;
@@ -140,7 +140,7 @@ monitor(struct Trapframe *tf)
 {
 	char *buf;
 
-	cprintf("Welco0me to the JOS kernel monitor!\n");
+	cprintf("Welcome to the JOS kernel monitor!\n");
 	cprintf("Type 'help' for a list of commands.\n");
 
 
