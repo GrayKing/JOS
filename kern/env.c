@@ -116,6 +116,13 @@ env_init(void)
 {
 	// Set up envs array
 	// LAB 3: Your code here.
+	env_free_list = NULL ; 
+	struct Env * ptr = envs + NENVS - 1 ;	
+	do {
+		ptr -> env_id = 0 ; 
+		ptr -> env_link = env_free_list ; 
+		env_free_list = ptr ; 
+	}
 
 	// Per-CPU part of the initialization
 	env_init_percpu();
