@@ -5,7 +5,6 @@
 #include <inc/trap.h>
 
 
-
 ###################################################################
 # exceptions/interrupts
 ###################################################################
@@ -21,32 +20,42 @@
  * where NAME is the argument passed to TRAPHANDLER.
  */
 #define TRAPHANDLER(name, num)						\
-	.globl name;		/* define global symbol for 'name' */	\
+	.text;\
+        .globl name;		/* define global symbol for 'name' */	\
 	.type name, @function;	/* symbol type is function */		\
 	.align 2;		/* align function definition */		\
 	name:			/* function starts here */		\
 	pushl $(num);							\
-	jmp _alltraps
+	jmp _alltraps;\
+        .data;\
+        .long name;\
+	.long num;\
+	
 
 /* Use TRAPHANDLER_NOEC for traps where the CPU doesn't push an error code.
  * It pushes a 0 in place of the error code, so the trap frame has the same
  * format in either case.
  */
 #define TRAPHANDLER_NOEC(name, num)					\
-	.globl name;							\
+        .text;\
+        .globl name;							\
 	.type name, @function;						\
 	.align 2;							\
 	name:								\
 	pushl $0;							\
 	pushl $(num);							\
-	jmp _alltraps
-
-.text
+	jmp _alltraps;\
+        .data;\
+        .long name;\
+        .long num;\
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
-
+.data
+.global vec;
+.long vec;
+vec:
 
 TRAPHANDLER_NOEC(IDIVIDE    , 0)		// divide error
 TRAPHANDLER_NOEC(IDEBUG     , 1)		// debug exception
@@ -68,6 +77,11 @@ TRAPHANDLER_NOEC(IMCHK      ,18)		// machine check
 TRAPHANDLER_NOEC(ISIMDERR   ,19)		// SIMD floating point error
 TRAPHANDLER_NOEC(ISYSCALL   ,48)
 
+.data
+.long -1;
+.global vec_end;
+.long vec_end;
+vec_end:
 /*
  * Lab 3: Your code here for _alltraps
  */
@@ -90,4 +104,6 @@ _alltraps:
 	movw   %ax,%es
 	movw   %ax,%ds	
 	pushl  %esp
-	call   trap	 	
+	call   trap
+
+
