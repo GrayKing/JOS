@@ -48,8 +48,46 @@
  */
 
 
+TRAPHANDLER_NOEC(IDIVIDE    , 0)		// divide error
+TRAPHANDLER_NOEC(IDEBUG     , 1)		// debug exception
+TRAPHANDLER_NOEC(INMI       , 2)		// non-maskable interrupt
+TRAPHANDLER_NOEC(IBRKPT     , 3)		// breakpoint
+TRAPHANDLER_NOEC(IOFLOW     , 4)		// overflow
+TRAPHANDLER_NOEC(IBOUND     , 5)		// bounds check
+TRAPHANDLER_NOEC(IILLOP     , 6)		// illegal opcode
+TRAPHANDLER_NOEC(IDEVICE    , 7)		// device not available
+TRAPHANDLER(IDBLFLT    , 8)		// double fault
+TRAPHANDLER(ITSS       ,10)		// invalid task switch segment
+TRAPHANDLER(ISEGNP     ,11)		// segment not present
+TRAPHANDLER(ISTACK     ,12)		// stack exception
+TRAPHANDLER(IGPFLT     ,13)		// general protection fault
+TRAPHANDLER(IPGFLT     ,14)		// page fault
+TRAPHANDLER_NOEC(IFPERR     ,16)		// floating point error
+TRAPHANDLER(IALIGN     ,17)		// aligment check
+TRAPHANDLER_NOEC(IMCHK      ,18)		// machine check
+TRAPHANDLER_NOEC(ISIMDERR   ,19)		// SIMD floating point error
+TRAPHANDLER_NOEC(ISYSCALL   ,48)
 
 /*
  * Lab 3: Your code here for _alltraps
  */
-
+.global _alltraps
+.align 4
+_alltraps:
+	pushw  $0
+	pushw  %es
+ 	pushw  $0
+	pushw  %ds
+	pushl  %eax
+	pushl  %ecx
+	pushl  %edx
+	pushl  %ebx
+	pushl  %esp
+	pushl  %ebp
+	pushl  %esi	
+	pushl  %edi
+        movw   $0x10,%ax
+	movw   %ax,%es
+	movw   %ax,%ds	
+	pushl  %esp
+	call   trap	 	

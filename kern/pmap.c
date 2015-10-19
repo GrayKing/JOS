@@ -569,8 +569,19 @@ static uintptr_t user_mem_check_addr;
 int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
-	// LAB 3: Your code here.
 
+	uintptr_t sv = ( ( uintptr_t ) va ) & ( ~0xFFF ) ;
+	uintptr_t ev = ( ( ( uintptr_t ) va ) + len - 1 + PGSIZE ) & (~0xFFF);
+	for ( ; sv != ev ; sv += PGSIZE ) {
+		pte_t * npte ;
+		user_mem_check_addr = sv ; 
+		if ( user_mem_check_addr < ( uintptr_t) va ) 
+			user_mem_check_addr = ( uintptr_t) va ; 
+		struct PageInfo * pp = page_lookup( env->env_pgdir , ( void * ) sv , &npte ) ; 
+		if ( pp == NULL ) return -E_FAULT ; 
+		if ( ! ( ( *npte ) & PTE_P ) ) return -E_FAULT ; 
+		if ( ( ( * npte ) & perm ) != perm ) return -E_FAULT ;   
+	}
 	return 0;
 }
 
