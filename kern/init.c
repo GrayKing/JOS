@@ -22,7 +22,6 @@ void
 i386_init(void)
 {
 	extern char edata[], end[];
-
 	// Before doing anything else, complete the ELF loading process.
 	// Clear the uninitialized global data (BSS) section of our program.
 	// This ensures that all static/global variables start out zero.
@@ -103,6 +102,23 @@ void
 mp_main(void)
 {
 	// We are in high EIP now, safe to switch to kern_pgdir 
+        /*
+	uint32_t cr4;
+		cr4 = rcr4();
+        	cr4 |= CR4_PSE ;
+        	lcr4(cr4);
+        	tlbflush();
+	uint32_t ceax , cebx , cecx , cedx ;
+        uint32_t cr4;
+	cpuid( 1 , &ceax , &cebx , &cecx , &cedx ) ;
+	uint32_t pse_enable = ( cedx & 0x8 ) ;
+        if ( pse_enable ) {
+		cr4 = rcr4();
+        	cr4 |= CR4_PSE ;
+        	lcr4(cr4);
+        	tlbflush();
+	}
+	*/
 	lcr3(PADDR(kern_pgdir));
 	cprintf("SMP: CPU %d starting\n", cpunum());
 
@@ -116,9 +132,8 @@ mp_main(void)
 	// only one CPU can enter the scheduler at a time!
 	//
 	// Your code here:
-
 	// Remove this after you finish Exercise 4
-	for (;;);
+	//for (;;);
 }
 
 /*

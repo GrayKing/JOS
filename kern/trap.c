@@ -175,6 +175,20 @@ trap_init_percpu(void)
 	//
 	// LAB 4: Your code here:
 
+	   
+	(thiscpu->cpu_ts).ts_esp0 = KSTACKTOP - ( thiscpu->cpu_id ) * ( KSTKGAP + KSTKSIZE ) ;
+	(thiscpu->cpu_ts).ts_ss0 = GD_KD;
+
+	gdt[(thiscpu->cpu_id)+(GD_TSS0 >> 3)] = SEG16(STS_T32A, (uint32_t) (&(thiscpu->cpu_ts)),
+					sizeof(struct Taskstate) - 1, 0);
+	gdt[(thiscpu->cpu_id)+(GD_TSS0 >> 3)].sd_s = 0;
+
+	ltr(GD_TSS0 + ( thiscpu->cpu_id ) * 8 );
+
+	lidt(&idt_pd);
+
+	
+	return ; 	
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
 	ts.ts_esp0 = KSTACKTOP;

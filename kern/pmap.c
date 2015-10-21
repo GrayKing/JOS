@@ -231,7 +231,7 @@ mem_init(void)
 	
 	// Check that the initial page directory has been set up correctly.
 	        
-	uint32_t pse_enable = ( cedx & 0x8 ) ;
+	uint32_t pse_enable = 0 & ( cedx & 0x8 ) ;
         if ( pse_enable ) {
 		cr4 = rcr4();
         	cr4 |= CR4_PSE ;
@@ -284,7 +284,11 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
-
+	int i = 0 ; 
+	for ( i = 0 ; i < NCPU ; i ++ ) {
+                uint32_t kstacktop_i = KSTACKTOP - i * ( KSTKSIZE + KSTKGAP) ; 
+		boot_map_region( kern_pgdir , kstacktop_i - KSTKSIZE , KSTKSIZE , PADDR(percpu_kstacks[i]) , PTE_W | PTE_P ) ;   
+	}
 }
 
 // --------------------------------------------------------------
@@ -470,7 +474,7 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 
         uint32_t ceax , cebx , cecx , cedx ;
         cpuid( 1 , &ceax , &cebx , &cecx , &cedx ) ;
-	uint32_t pse_enable = ( cedx & 0x8 ) ; 
+	uint32_t pse_enable = 0 & ( cedx & 0x8 ) ; 
 
 	for ( ; cnt < size ; cnt += PGSIZE ) {
 		if ( ( PTX(ptr_va) == 0 ) && ( PTX(ptr_pa) == 0 ) && ( PGOFF(ptr_va) == 0 ) && ( PGOFF(ptr_pa) == 0 ) && 
@@ -623,10 +627,10 @@ mmio_map_region(physaddr_t pa, size_t size)
 		
 	if ( base + size > MMIOLIM ) 
 		panic("mmio_map_region: reservation overflow MMIOLIM!\n");
-	boot_map_region( kern_pgdir , base , size , pa , PTE_PCD | PTE_W | PTE_P ); 
+	boot_map_region( kern_pgdir , base , size , pa , PTE_PWT | PTE_PCD | PTE_W ); 
 	
 	uintptr_t tmp_base = base ;
-	base = base + size ;  
+	base = (( uint32_t) base ) + size ;  
 	return ( void * ) tmp_base ; 
 	//panic("mmio_map_region not implemented");
 }
