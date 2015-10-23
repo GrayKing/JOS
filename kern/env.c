@@ -497,6 +497,7 @@ env_pop_tf(struct Trapframe *tf)
 	// Record the CPU we are running on for user-space debugging
 	curenv->env_cpunum = cpunum();
 
+	unlock_kernel();
 	__asm __volatile("movl %0,%%esp\n"
 		"\tpopal\n"
 		"\tpopl %%es\n"
@@ -536,7 +537,7 @@ env_run(struct Env *e)
 	// LAB 3: Your code here.
 	if ( ( curenv ) && ( curenv->env_status == ENV_RUNNING ) )
 		curenv->env_status = ENV_RUNNABLE ;  
-	curenv = e ; 
+	curenv = e ;
 	curenv -> env_status = ENV_RUNNING ; 
 	( curenv -> env_runs ) ++ ;
 	lcr3( PADDR( curenv -> env_pgdir ) ) ; 	

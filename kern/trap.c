@@ -255,7 +255,7 @@ print_regs(struct PushRegs *regs)
 
 static void
 trap_dispatch(struct Trapframe *tf)
-{
+{	
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
 
@@ -281,8 +281,7 @@ trap_dispatch(struct Trapframe *tf)
 		env_destroy(curenv);
 		return ;
 	}
-	if (tf->tf_trapno == T_SYSCALL ) {
-	
+	if (tf->tf_trapno == T_SYSCALL ) {	
 		(tf->tf_regs).reg_eax = 
 	        syscall( (tf->tf_regs).reg_eax , 
 			 (tf->tf_regs).reg_edx , 
@@ -329,6 +328,7 @@ trap(struct Trapframe *tf)
 		// serious kernel work.
 		// LAB 4: Your code here.
 		assert(curenv);
+		lock_kernel();
 
 		// Garbage collect if current enviroment is a zombie
 		if (curenv->env_status == ENV_DYING) {
