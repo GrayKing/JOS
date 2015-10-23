@@ -169,7 +169,6 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	//   allocated!
 
 	// LAB 4: Your code here.
-        //cprintf(" sys_page_alloc : %d %08x\n",envid,(uint32_t)va);
 	struct Env * tarenv = NULL ; 
 	int result_getenv = envid2env( envid , &tarenv  , 1 ) ;
 	if ( result_getenv < 0 ) 
@@ -378,7 +377,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		case SYS_env_set_status:
 			return sys_env_set_status( ( envid_t ) a1 , a2 ) ;   
 		case SYS_env_set_pgfault_upcall:
-			return sys_env_set_pgfault_upcall( ( envid_t ) a1 , ( void * ) a2 ) ; 
+			return 
 	default:
 		return -E_NO_SYS;
 	}
