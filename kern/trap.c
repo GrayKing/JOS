@@ -378,7 +378,6 @@ page_fault_handler(struct Trapframe *tf)
 		env_destroy(curenv);
 		return ;
 	}
-	
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 

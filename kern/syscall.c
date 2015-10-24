@@ -89,7 +89,9 @@ sys_exofork(void)
 	if ( result_alloc < 0 ) return result_alloc ; 
 	memcpy( & ( newenv->env_tf ) , & ( curenv->env_tf ) , sizeof( struct Trapframe ) ) ;
 	newenv->env_status = ENV_NOT_RUNNABLE ; 
-	(newenv->env_tf).tf_regs.reg_eax = 0 ; 
+	(newenv->env_tf).tf_regs.reg_eax = 0 ;
+	(newenv->env_pgfault_upcall) = ( curenv->env_pgfault_upcall);
+	//cprintf(" sys_exofor : eip is %08x\n",(newenv->env_tf).tf_eip ) ; 
 	return ( newenv->env_id ) ;  
 	//panic("sys_exofork not implemented");
 }
@@ -176,6 +178,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 		return -E_BAD_ENV ; 	
 	if ( ( ( uint32_t ) va >= UTOP ) || ( PGOFF( ( uint32_t ) va ) ) ) 
 		return -E_INVAL ; 
+	//cprintf("Did it reach here? perm : %08x\n",perm);
         if ( ( ! ( perm & PTE_U ) ) ||
  	     ( ! ( perm & PTE_P ) ) ||
              ( perm & ( ~ ( PTE_U | PTE_P | PTE_AVAIL | PTE_W ) ) ) )
@@ -234,22 +237,29 @@ sys_page_map(envid_t srcenvid, void *srcva,
 
 	if ( ( ( uint32_t ) dstva >= UTOP ) || ( PGOFF( ( uint32_t ) dstva ) ) ) 
 		return -E_INVAL ; 
-        	
+       
+	//cprintf("Reached here? prem : %08x\n", perm ) ; 	
         if ( ( ! ( perm & PTE_U ) ) ||
  	     ( ! ( perm & PTE_P ) ) ||
              ( perm & ( ~ ( PTE_U | PTE_P | PTE_AVAIL | PTE_W ) ) ) )
 		return -E_INVAL ;  			
-	 
 	pte_t *srcpte = NULL ;  
+	//cprintf("------------------Info in Alloc------------------------\n");
+	//cprintf("\tsrcid : %d dstid : %d perm : %08x\n", srcenvid , dstenvid , perm ) ; 	
+	//cprintf("\tsrcva : %08x , dstva : %08x\n", ( uint32_t) srcva,(uint32_t)dstva ) ;
 	struct PageInfo * pp = page_lookup( srcenv->env_pgdir , srcva , &srcpte) ; 
 	if ( pp == NULL ) return -E_INVAL ; 
 	
+	//cprintf("Reached here?\n");	
 	if ( ( perm & PTE_W ) && ( ! ( ( *srcpte ) & PTE_W ) ) )
 		return -E_INVAL ; 
-	
+
+	//cprintf("Reached here?\n");	
 	int result_insert = page_insert( dstenv->env_pgdir , pp , dstva , perm ) ;	
 	if ( result_insert < 0 ) 
 		return -E_NO_MEM ; 
+	//cprintf("\tpp_ref : %d\n",pp->pp_ref);
+	//cprintf("------good end?-------\n\n");
 	return 0 ;
 	//panic("sys_page_map not implemented");
 }
@@ -351,9 +361,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	// LAB 3: Your code here.
 
 	//panic("syscall not implemented");
-	if ( syscallno == SYS_yield){
-		cprintf("Does it happen?\n");
-	}
+	//if ( syscallno == SYS_yield){
+	//	cprintf("Does it happen?\n");
+	//}
 	switch (syscallno) {
 		case SYS_cputs :
 			sys_cputs( ( const char * ) a1 , ( size_t ) a2 ); 
