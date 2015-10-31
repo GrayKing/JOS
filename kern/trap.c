@@ -122,6 +122,23 @@ trap_init(void)
 	SETGATE( idt[19] , 0 , GD_KT , handler_entry[19] , 0 ) ;  
 	SETGATE( idt[48] , 1 , GD_KT , handler_entry[48] , 3 ) ;
 	
+	SETGATE( idt[32] , 0 , GD_KT , handler_entry[32] , 3 ) ;  
+	SETGATE( idt[33] , 0 , GD_KT , handler_entry[33] , 3 ) ;  
+	SETGATE( idt[34] , 0 , GD_KT , handler_entry[34] , 3 ) ;  
+	SETGATE( idt[35] , 0 , GD_KT , handler_entry[35] , 3 ) ;  
+	SETGATE( idt[36] , 0 , GD_KT , handler_entry[36] , 3 ) ;  
+	SETGATE( idt[37] , 0 , GD_KT , handler_entry[37] , 3 ) ;  
+	SETGATE( idt[38] , 0 , GD_KT , handler_entry[38] , 3 ) ;  
+	SETGATE( idt[39] , 0 , GD_KT , handler_entry[39] , 3 ) ;  
+	SETGATE( idt[40] , 0 , GD_KT , handler_entry[40] , 3 ) ;  
+	SETGATE( idt[41] , 0 , GD_KT , handler_entry[41] , 3 ) ;  
+	SETGATE( idt[42] , 0 , GD_KT , handler_entry[42] , 3 ) ;  
+	SETGATE( idt[43] , 0 , GD_KT , handler_entry[43] , 3 ) ;  
+	SETGATE( idt[44] , 0 , GD_KT , handler_entry[44] , 3 ) ;  
+	SETGATE( idt[45] , 0 , GD_KT , handler_entry[45] , 3 ) ;  
+	SETGATE( idt[46] , 0 , GD_KT , handler_entry[46] , 3 ) ;  
+	SETGATE( idt[47] , 0 , GD_KT , handler_entry[47] , 3 ) ;  
+	
          
 	/*
 	SETGATE( idt[0] , 0 , GD_KT , IDIVIDE , 0 ) ;
@@ -271,6 +288,12 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
+        
+	if ( ( tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER ) ) {
+		lapic_eoi();
+		sched_yield();
+		return ;
+	}
 
 	if (tf->tf_trapno == T_PGFLT ) {
 		page_fault_handler( tf ) ;
