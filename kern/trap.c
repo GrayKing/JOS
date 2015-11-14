@@ -120,7 +120,7 @@ trap_init(void)
 	SETGATE( idt[17] , 0 , GD_KT , handler_entry[17] , 0 ) ;  
 	SETGATE( idt[18] , 0 , GD_KT , handler_entry[18] , 0 ) ;  
 	SETGATE( idt[19] , 0 , GD_KT , handler_entry[19] , 0 ) ;  
-	SETGATE( idt[48] , 1 , GD_KT , handler_entry[48] , 3 ) ;
+	SETGATE( idt[48] , 0 , GD_KT , handler_entry[48] , 3 ) ;
 	
 	SETGATE( idt[32] , 0 , GD_KT , handler_entry[32] , 3 ) ;  
 	SETGATE( idt[33] , 0 , GD_KT , handler_entry[33] , 3 ) ;  
