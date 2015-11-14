@@ -327,11 +327,17 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	int result_getdstenv = envid2env( envid , &dstenv  , 0 ) ;
 	if ( result_getdstenv < 0 ) 
 		return -E_BAD_ENV ; 	
-	if ( ! ( dstenv->env_ipc_recving ) ) 
-		return -E_IPC_NOT_RECV ; 	
 
-	if ( (( (uintptr_t)srcva) < UTOP ) && ( PGOFF(srcva) != 0 ) ) 
-		return  -E_INVAL ; 
+	if ( (( (uintptr_t)srcva) < UTOP ) && ( PGOFF(srcva) != 0 ) )
+		 return  -E_INVAL ; 
+	
+	if (  ( ! ( dstenv->env_ipc_recving ) ) 
+	     || ( ( dstenv->env_ipc_recving ) && ( dstenv->env_ipc_lockon != curenv->env_id ) && ( dstenv->env_ipc_lockon != 0 ) ) ) {
+		curenv->env_ipc_waitnext = dstenv->env_ipc_waithead;
+		dstenv->env_ipc_waithead = curenv ;  
+		curenv->env_status = ENV_NOT_RUNNABLE;
+		return -E_IPC_NOT_RECV ; 
+	}	
 		
 	if ( ( ( uintptr_t ) srcva ) < UTOP ) {	
 		if ( ( ! ( perm & PTE_U ) ) ||
@@ -349,6 +355,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		if ( result_insert < 0 ) 
 		return -E_NO_MEM ; 
 	}
+	dstenv->env_ipc_lockon = 0 ; 
 	dstenv->env_ipc_recving = false ; 
 	dstenv->env_ipc_from = curenv->env_id ; 
 	dstenv->env_ipc_value = value ; 
@@ -356,7 +363,6 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	dstenv->env_ipc_perm = perm ;
 	(dstenv->env_tf).tf_regs.reg_eax = 0 ;
 	return 0 ;
-	//panic("sys_ipc_try_send not implemented");
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -379,6 +385,15 @@ sys_ipc_recv(void *dstva)
 	curenv->env_ipc_recving = true ;
  	curenv->env_status = ENV_NOT_RUNNABLE ;
 	curenv->env_ipc_dstva = dstva ;  
+	if ( curenv->env_ipc_waithead ) {
+		struct Env * dstenv = curenv->env_ipc_waithead ; 
+		curenv->env_ipc_lockon = dstenv ->env_id ; 
+		dstenv->env_status = ENV_RUNNABLE ;
+		curenv->env_ipc_waithead = dstenv -> env_ipc_waitnext ;
+		dstenv->env_ipc_waitnext = NULL ; 
+	} else {
+		curenv->env_ipc_lockon = 0 ; 
+	}
 	sched_yield();
 	//panic("sys_ipc_recv not implemented");
 	return 0;
