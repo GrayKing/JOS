@@ -105,8 +105,8 @@ trap_init(void)
 	SETGATE( idt[0] , 0 , GD_KT , handler_entry[0] , 0 ) ;  
 	SETGATE( idt[1] , 0 , GD_KT , handler_entry[1] , 0 ) ;  
 	SETGATE( idt[2] , 0 , GD_KT , handler_entry[2] , 0 ) ;  
-	SETGATE( idt[3] , 1 , GD_KT , handler_entry[3] , 3 ) ;  
-	SETGATE( idt[4] , 1 , GD_KT , handler_entry[4] , 0 ) ;  
+	SETGATE( idt[3] , 0 , GD_KT , handler_entry[3] , 3 ) ;  
+	SETGATE( idt[4] , 0 , GD_KT , handler_entry[4] , 0 ) ;  
 	SETGATE( idt[5] , 0 , GD_KT , handler_entry[5] , 0 ) ;  
 	SETGATE( idt[6] , 0 , GD_KT , handler_entry[6] , 0 ) ;  
 	SETGATE( idt[7] , 0 , GD_KT , handler_entry[7] , 0 ) ;  
@@ -297,6 +297,11 @@ trap_dispatch(struct Trapframe *tf)
 
 	// Handle keyboard and serial interrupts.
 	// LAB 5: Your code here.
+
+	if ( ( tf->tf_trapno == IRQ_OFFSET + IRQ_KBD ) ) {
+		serial_intr();
+		return ;	
+	}
 
 	if (tf->tf_trapno == T_PGFLT ) {
 		page_fault_handler( tf ) ;

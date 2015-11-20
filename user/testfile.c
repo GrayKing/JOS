@@ -14,6 +14,7 @@ xopen(const char *path, int mode)
 	fsipcbuf.open.req_omode = mode;
 
 	fsenv = ipc_find_env(ENV_TYPE_FS);
+	cprintf("%d\n",fsenv);
 	ipc_send(fsenv, FSREQ_OPEN, &fsipcbuf, PTE_P | PTE_W | PTE_U);
 	return ipc_recv(NULL, FVA, NULL);
 }
@@ -111,6 +112,7 @@ umain(int argc, char **argv)
 
 	if ((f = open("/big", O_RDONLY)) < 0)
 		panic("open /big: %e", f);
+	cprintf("%d\n",sizeof(buf));
 	for (i = 0; i < (NDIRECT*3)*BLKSIZE; i += sizeof(buf)) {
 		*(int*)buf = i;
 		if ((r = readn(f, buf, sizeof(buf))) < 0)

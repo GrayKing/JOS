@@ -300,7 +300,26 @@ map_segment(envid_t child, uintptr_t va, size_t memsz,
 static int
 copy_shared_pages(envid_t child)
 {
-	// LAB 5: Your code here.
+	int i = 0 ;   
+	envid_t envid = child ; 
+	envid_t curenvid = sys_getenvid(); 
+	for ( i = 0 ; i <  ( 1 << 20 ) ; i ++ ) {
+		void * addr = ( void * ) ( i << 12 ) ; 
+		pde_t * pde_ptr = ( pde_t * ) ( ( ( uint32_t ) uvpd ) + ( PDX(addr) << 2 ) ) ;
+		pte_t * pte_ptr = ( pte_t * ) ( ( ( uint32_t ) uvpt ) + ( PDX(addr) << 12 ) + ( PTX(addr) << 2 ) ) ;
+
+		if (!( ( * pde_ptr ) & PTE_P ) )
+			continue ;
+		if (!( ( * pte_ptr ) & PTE_P ) )
+			continue ;
+		int perm = (*pte_ptr) & PTE_SYSCALL ;
+		if ( perm & PTE_SHARE ) {
+			if ( sys_page_map( curenvid , ( void * ) addr ,
+						envid    , ( void * ) addr ,
+						perm ) < 0 )
+				panic(" in inc/spwan.c <copy_shared_pages> : Unable to map the page! %e\n");
+		}
+	}
 	return 0;
 }
 

@@ -84,6 +84,13 @@ duppage(envid_t envid, unsigned pn)
 	if (!( ( * pte_ptr ) & PTE_P ) ) 
 		panic(" in inc/fork.c <duppage> : Page Table Entry doesn't exsist!\n");
 	int perm = (*pte_ptr) & PTE_SYSCALL ; 
+	if ( perm & PTE_SHARE ) {
+		if ( sys_page_map( curenvid , ( void * ) addr , 
+                                   envid    , ( void * ) addr , 
+                                   perm ) < 0 ) 
+			panic(" in inc/fork.c <duppage> : Unable to map the page! %e\n");
+		return 0 ;
+	}
 	if ( perm & PTE_W ) {
 		if ( sys_page_map( curenvid , ( void * ) addr , 
                                    envid    , ( void * ) addr , 
