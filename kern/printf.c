@@ -23,6 +23,16 @@ vcprintf(const char *fmt, va_list ap)
 }
 
 int
+cvcprintf(const char *fmt, va_list ap)
+{
+	int cnt = 0;
+
+	cvprintfmt((void*)putch, &cnt, fmt, ap);
+	return cnt;
+}
+
+
+int
 cprintf(const char *fmt, ...)
 {
 	va_list ap;
@@ -30,6 +40,19 @@ cprintf(const char *fmt, ...)
 
 	va_start(ap, fmt);
 	cnt = vcprintf(fmt, ap);
+	va_end(ap);
+
+	return cnt;
+}
+
+int
+ccprintf(const char *fmt, ...)
+{
+	va_list ap;
+	int cnt;
+
+	va_start(ap, fmt);
+	cnt = cvcprintf(fmt, ap);
 	va_end(ap);
 
 	return cnt;

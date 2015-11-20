@@ -107,8 +107,10 @@ lapic_init(void)
 	while(lapic[ICRLO] & DELIVS)
 		;
 
+	// Send an Init Level De-Assert to synchronize arbitration ID's.
 	// Enable interrupts on the APIC (but not on the processor).
 	lapicw(TPR, 0);
+	
 }
 
 int
