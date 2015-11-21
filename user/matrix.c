@@ -16,11 +16,13 @@ w : worker ( recevie data , hold matrix and , calc the sum and send it to other 
 
 the processes are arranged like a matrix .
 if N is 4 , then the matrix will looks like :  
-	c e e e e 
-	r w w w w 
-	r w w w w 
-	r w w w w 
-	r w w w w 
+	  | 0 1 2 3 4
+	--+---------- 
+	0 | c e e e e 
+	1 | r w w w w 
+	2 | r w w w w 
+	3 | r w w w w 
+	4 | r w w w w 
 
  */
 
@@ -69,24 +71,35 @@ void emitter()
 
 void worker()
 {
+	//Initilize the Worker : the Controller give the Rightside Process's ID to it.
+	envid_t init_id = -1 ; 
+	envid_t right_id = -1 ; 
+	if ( procy != N ) {
+		while ( init_id != proc[0][0] ) {
+			right_id = ipc_recv( &init_id , 0 , 0 ) ; 
+			if ( right_id == HALT_SIG ) {
+				cprintf(" [ Worker(%d,%d) ] Now is halting.\n", procx , procy ) ;
+				exit();	
+			}
+		}
+	}
 	envid_t s1 , w1 , s2 , w2 ;
 	s2 = -1 ;  
 	int d1 , d2 ;
-	d2 = d1 = 0 ; 
-	while ( 1 ) { 
+	d2 = d1 = 0 ;
+	while ( true ) { 
 		d1 = ipc_recv(&s1,0,0);
 		if ( procy != N ) d2 = ipc_recv(&s2,0,0);
-		cprintf(" [ Worker(%d,%d) ] " ,procx-1,procy-1);
 		if ( ( s1 == proc[0][0] ) && ( d1 == HALT_SIG) ) {
-			cprintf("Now is halting. ");
+			cprintf(" [ Worker(%d,%d) ] Now is halting.\n", procx , procy ) ;
 			exit();
 		}
 		if ( ( s2 == proc[0][0] ) && ( d2 == HALT_SIG) ) {
-			cprintf("Now is halting. ");
+			cprintf(" [ Worker(%d,%d) ] Now is halting.\n", procx , procy ) ;
 			exit();
 		}
-		cprintf("Received data.Now calc and sent it to woker.\n");
-		if ( s2 > s1 )  {
+		cprintf(" [ Worker(%d,%d) ] Received data , will calc  and sent it to woker.\n" , procx , procy );
+		if ( s1 == right_id )  {
 			envid_t tmp = s2 ; s2 = s1 ; s1 = tmp ; 
 			int tmp2 = d2 ; d2 = d1 ; d1 = tmp2; 
 		}
@@ -102,7 +115,7 @@ void receptor()
 {
 	envid_t s1 , w1 ; 
 	int data ;
-	while ( 1 ) { 
+	while ( true ) { 
 		data = ipc_recv(&s1,0,0) ; 
 		if ( ( s1 == proc[0][0] ) && ( data == HALT_SIG ) ) { 
 			cprintf(" [ Receptor %d ] ", procx-1 ) ; 
@@ -129,8 +142,13 @@ void controller_terminate()
 
 void
 umain(int argc, char **argv)
-{	
+{
+	// Prepare Step 1 : initial the basic data struct .	
 	initmatrix();
+
+	// Prepare 2 : fork the processes in a specific way , 
+	//             and store the information into the 'proc' matrix 
+	// 	       use the global value 'procx' and 'procy' to direct the position.
 	procx = N ; procy = 0 ; 
 	while (1) {
 		envid_t nowptr = -1 ; 
@@ -153,29 +171,37 @@ umain(int argc, char **argv)
 		if ( ( procx == 0 ) && ( procy == N ) ) break ; 
 		if ( procy == N ) {
 			procx = procx - 1 ; 
-			procy = 0 ;
-			if ( procx == 0 ) procy = 1 ; //ignore the controller ;
+			procy = 0 ;                    // if meet the last element in the row , then move to the next row. 
+
+			if ( procx == 0 ) procy = 1 ;  // ignore the controller ;
 		} else {
 			procy ++; 
 		}
 	}
-	// only the controller can reach here.
-	// we only perform one iteration
-	int i , j , k ; 
-	int result ; 
-	int Ans[N][N];
-	for ( k = 0 ; k < N ; k ++ ) 
-	for ( i = 0 ; i < N ; i ++ ) Ans[k][i] = 0 ; 
+	
+	// Prepare Step 3 : only the controller can reach here.
+	// 	            now send the corresponding rightside process's id to each worker . 
+	int i , j , k ; 	 
 
-	for ( k = 1 ; k <= N ; k ++ ) { 
-	// Step 1 : dispatch data to emitter .
+	for ( i = 1 ; i <= N ; i ++ ) 
+		for ( j = 1 ; j <= N-1 ; j ++ ) {
+			ipc_send( proc[i][j] , proc[i][j+1] , 0 , 0 ) ;
+		}
+	
+	// Having prepared for all the things we need , we will run the big procedure on processes.
+	// In this simple case ,  we only perform one iteration , but actually for any times interation it would be correct and safe . 
+ 
+	// Run Step 1 : set the Ans vector to all zeros . 			
+	int Ans[N+1];
+	memset( Ans , 0 , sizeof(Ans) ) ;
+
+	// Run Step 2 : dispatch data to emitter .
 	for ( i = 1 ; i <= N ; i ++ ) {
-		cprintf(" [ Controller ] ") ;
-		cprintf("Dispatching the data to Emitter(%d) @Process(%d).\n",i+k,proc[0][i]);
-		ipc_send( proc[0][i] , i+k , 0 , 0 ) ;
+		cprintf(" [ Controller ] Dispatching the data to Emitter(%d) @Process(%d).\n",i,proc[0][i]);
+		ipc_send( proc[0][i] , i , 0 , 0 ) ;
 	}	
 
-	// Step 2 : receiving data from receptor .
+	// Run Step 3 : receiving data from receptor .
 	for ( i = 1 ; i <= N ; i ++ ) {
 		envid_t recp_id ; 
 		result = ipc_recv( &recp_id , 0 , 0 ) ;    
@@ -183,22 +209,20 @@ umain(int argc, char **argv)
 			if ( recp_id == proc[j][0] ) {
 				cprintf(" [ Contorller ] ");
 				cprintf("Received the data %d from Receptor(%d) @Process(%d).\n",result , j,proc[j][0]);
-				Ans[k-1][ j - 1 ]  = result ; break ; 
+				Ans[ j - 1 ]  = result ; break ; 
 			}
 		}
 		if ( j == N + 1 ) { 
-			cprintf(" [ Error in Contorller ] ");
-			cprintf("Fail in receiving , all the processes will be halt.\n");
+			cprintf(" [ Error in Contorller ] Fail in receiving , all the processes will be halt.\n");
 			controller_terminate();
 		}
 	}
 	}
-	// Step 3 : show the Answer and terminate . 
-	cprintf(" [ Final Answer ] ") ;
-	for ( k = 0 ; k < N ; k ++ , cprintf("\n" ) )  
+	// Run Step 4 : show the 'Ans' matrix and terminate the whole big procedure. 
+	cprintf(" [ Final Answer ] \n") ;
 	for ( i = 0 ; i < N ; i ++ ) 
-		cprintf("\t%d",Ans[k][i]);
-	cprintf("\n");
+		cprintf(", %8d",Ans[i]);
+	cprintf("\n [ Final Answer ] \n");
 	controller_terminate();
 }
 
