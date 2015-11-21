@@ -22,7 +22,7 @@ sys_cputs(const char *s, size_t len)
 	// Destroy the environment if not.
 
 	// LAB 3: Your code here.
-        user_mem_assert( curenv , s , len , PTE_U ) ;	
+	user_mem_assert( curenv , s , len , PTE_U ) ;	
 	// Print the string supplied by the user.
 	cprintf("%.*s", len, s);
 }
@@ -420,6 +420,49 @@ sys_ipc_recv(void *dstva)
 	return 0;
 }
 
+// wait for implementation 
+// stack , trapframe( only the entry point , so don't need to change everything )  
+//
+static int 
+sys_exec_support( unsigned eip , unsigned esp , void * tempstack , void * tempcode , size_t npages )
+{
+	if ( ( ( ( unsigned ) tempstack ) &  0xFFF ) != 0 ) 
+		return -E_INVAL;
+        user_mem_assert( curenv , tempstack , PGSIZE , PTE_U | PTE_P | PTE_W ) ;
+	user_mem_assert( curenv , tempcode , PGSIZE*npages , PTE_U | PTE_P ) ;
+
+	memset(&curenv->env_tf, 0, sizeof(curenv->env_tf));
+	curenv->env_tf.tf_ds = GD_UD | 3;
+	curenv->env_tf.tf_es = GD_UD | 3;
+	curenv->env_tf.tf_ss = GD_UD | 3;
+	curenv->env_tf.tf_esp = esp;
+	curenv->env_tf.tf_cs = GD_UT | 3;
+	curenv->env_tf.tf_eflags = (curenv->env_tf.tf_eflags) | FL_IF ;
+	curenv->env_tf.tf_eip = eip ;
+
+	int r ;
+	if ((r = sys_page_unmap(curenv->env_id, (void*)(USTACKTOP-PGSIZE))) < 0)
+		return r ;
+	if ((r = sys_page_map(curenv->env_id, tempstack, curenv->env_id, (void*) (USTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W)) < 0)
+		return r ; 
+	if ((r = sys_page_unmap(curenv->env_id, tempstack)) < 0)
+		return r ;
+	if ((r= sys_page_unmap(curenv->env_id,(void*)(UXSTACKTOP-PGSIZE))) < 0 )
+		return r ; 
+	if ((r= sys_page_alloc(curenv->env_id,(void*)(UXSTACKTOP-PGSIZE),PTE_U|PTE_P|PTE_W)) < 0 )
+		return r ; 
+	size_t i = 0 ; 
+	for ( i = 0 ; i < npages ; i ++ ) {		
+		if ((r = sys_page_unmap(curenv->env_id,  (void*)((0x00800000+i*PGSIZE))) < 0))
+			cprintf("1 %e\n",r);
+		if ((r = sys_page_map(curenv->env_id, (void*)(((unsigned)tempcode)+i*PGSIZE), curenv->env_id, (void*)(0x00800000+i*PGSIZE), PTE_P | PTE_U | PTE_W)) < 0)
+			if ((r = sys_page_map(curenv->env_id, (void*)(((unsigned)tempcode)+i*PGSIZE), curenv->env_id, (void*)(0x00800000+i*PGSIZE), PTE_P | PTE_U)) < 0) cprintf("2 %e\n",r);
+		if ((r = sys_page_unmap(curenv->env_id,  (void*)(((unsigned)tempcode)+i*PGSIZE))) < 0)
+			cprintf("3 %e\n",r);
+	}
+	return 0 ; 		
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -431,7 +474,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	//panic("syscall not implemented");
 	//if ( syscallno == SYS_yield){
 	//	cprintf("Does it happen?\n");
-	//}
+	//
+	//cprintf("%d\n",syscallno);
 	switch (syscallno) {
 		case SYS_cputs :
 			sys_cputs( ( const char * ) a1 , ( size_t ) a2 ); 
@@ -463,6 +507,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_ipc_recv( (void* ) a1 ) ;
 		case SYS_env_set_trapframe:
 			return sys_env_set_trapframe( ( envid_t) a1 , ( struct Trapframe * ) a2 ) ; 
+		case SYS_exec_support:
+			return sys_exec_support( a1 , a2 , ( void * ) a3 , ( void * ) a4 , a5 ) ; 
 	default:
 		return -E_INVAL;
 	}

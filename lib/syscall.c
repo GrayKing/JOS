@@ -117,3 +117,8 @@ sys_ipc_recv(void *dstva)
 	return syscall(SYS_ipc_recv, 1, (uint32_t)dstva, 0, 0, 0, 0);
 }
 
+int 
+sys_exec_support( unsigned eip , unsigned esp , void * tempstack , void * tempcode , size_t npages) 
+{
+	return syscall(SYS_exec_support,0,eip,esp,(uint32_t)tempstack,(uint32_t)tempcode, npages );
+}
